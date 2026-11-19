@@ -1,6 +1,6 @@
 ﻿# Public Asset Auction and Bidding System
 
-A real-time auction platform for Uganda public assets — government vehicles, land, and equipment. Sellers list assets, bidders register, complete KYC, place deposits, and bid in real time. Every bid is recorded atomically with `BEGIN IMMEDIATE` to prevent race conditions. The auction engine is FastAPI + SQLite + SQLModel, and the mobile client is Flutter.
+A real-time auction platform for Uganda public assets  government vehicles, land, and equipment. Sellers list assets, bidders register, complete KYC, place deposits, and bid in real time. Every bid is recorded atomically with `BEGIN IMMEDIATE` to prevent race conditions. The auction engine is FastAPI + SQLite + SQLModel, and the mobile client is Flutter.
 
 ## Group Members
 
