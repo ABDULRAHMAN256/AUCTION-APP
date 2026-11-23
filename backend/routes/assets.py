@@ -1,9 +1,9 @@
-﻿# routes/assets.py â€” Assets CRUD endpoints
+﻿# routes/assets.py — Assets CRUD
 from fastapi import APIRouter, HTTPException, Depends
 from sqlmodel import Session, select
 from typing import Optional
 from database import get_session
-from models import Asset, AssetImage, Category
+from models import Asset, AssetImage, Category, User
 from auth import get_current_user
 from pydantic import BaseModel
 from datetime import datetime, timezone
@@ -50,7 +50,7 @@ def list_assets(
             statement = statement.where(Asset.category_id == cat.category_id)
     if search:
         statement = statement.where(Asset.title.contains(search) | Asset.description.contains(search))
-    if status and status in ("upcoming", "live", "sold", "cancelled"):
+    if status and status in ("draft", "scheduled", "active", "closed", "sold"):
         statement = statement.where(Asset.status == status)
     assets = session.exec(statement).all()
     return [a.model_dump() for a in assets]
@@ -71,8 +71,17 @@ def create_asset(
     user: dict = Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
-    if user["role"] not in ("seller", "admin"):
-        raise HTTPException(status_code=403, detail="Only sellers or admins can create assets")
+    # Iron Rule: admin cannot create assets
+    if user["role"] == "admin":
+        raise HTTPException(status_code=403, detail="Administrators cannot list assets. The admin oversees the platform.")
+
+    if user["role"] not in ("seller", "both", "admin"):
+        raise HTTPException(status_code=403, detail="Only sellers can create assets")
+
+    # KYC gate — must be approved
+    seller = session.get(User, user["id"])
+    if not seller or seller.kyc_status != "approved":
+        raise HTTPException(status_code=403, detail="KYC must be approved before listing assets")
 
     if body.reserve_price < body.starting_price:
         raise HTTPException(status_code=400, detail="reserve_price must be >= starting_price")
@@ -94,7 +103,7 @@ def create_asset(
         reserve_price=body.reserve_price,
         min_increment=body.min_increment,
         current_price=body.starting_price,
-        status="upcoming",
+        status="scheduled",
         start_time=datetime.fromisoformat(body.start_time.replace("Z", "+00:00")),
         end_time=datetime.fromisoformat(body.end_time.replace("Z", "+00:00")),
         created_at=datetime.now(timezone.utc),
@@ -118,8 +127,8 @@ def update_asset(
     user: dict = Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
-    if user["role"] not in ("seller", "admin"):
-        raise HTTPException(status_code=403, detail="Only sellers or admins can update assets")
+    if user["role"] not in ("seller", "both", "admin"):
+        raise HTTPException(status_code=403, detail="Only sellers can update assets")
 
     asset = session.get(Asset, asset_id)
     if not asset:
@@ -154,8 +163,8 @@ def delete_asset(
     user: dict = Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
-    if user["role"] not in ("seller", "admin"):
-        raise HTTPException(status_code=403, detail="Only sellers or admins can delete assets")
+    if user["role"] not in ("seller", "both", "admin"):
+        raise HTTPException(status_code=403, detail="Only sellers can delete assets")
 
     asset = session.get(Asset, asset_id)
     if not asset:
@@ -164,8 +173,8 @@ def delete_asset(
     if user["role"] != "admin" and asset.seller_id != user["id"]:
         raise HTTPException(status_code=403, detail="You can only delete your own assets")
 
-    if asset.status == "live":
-        raise HTTPException(status_code=409, detail="Cannot delete a live asset")
+    if asset.status == "active":
+        raise HTTPException(status_code=409, detail="Cannot delete an active asset")
 
     session.delete(asset)
     session.commit()

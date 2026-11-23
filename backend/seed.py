@@ -45,15 +45,15 @@ def seed():
         assets = [
             Asset(seller_id=sm.user_id, category_id=veh.category_id, title="Toyota Land Cruiser V8",
                   description="Ex-Ministry.", starting_price=45000000, reserve_price=60000000,
-                  min_increment=500000, current_price=45000000, status="live",
+                  min_increment=500000, current_price=45000000, status="active",
                   start_time=now - timedelta(days=1), end_time=now + timedelta(days=2), created_at=now),
             Asset(seller_id=sl.user_id, category_id=prop.category_id, title="Plot 0.5 Acres Kololo",
                   description="Freehold title.", starting_price=800000000, reserve_price=900000000,
-                  min_increment=10000000, current_price=800000000, status="upcoming",
+                  min_increment=10000000, current_price=800000000, status="scheduled",
                   start_time=now + timedelta(days=3), end_time=now + timedelta(days=10), created_at=now),
             Asset(seller_id=sm.user_id, category_id=eq.category_id, title="JCB 3CX Backhoe",
                   description="Ex-UNRA.", starting_price=120000000, reserve_price=150000000,
-                  min_increment=1000000, current_price=120000000, status="live",
+                  min_increment=1000000, current_price=120000000, status="active",
                   start_time=now - timedelta(days=2), end_time=now + timedelta(hours=6), created_at=now),
         ]
         for a in assets:

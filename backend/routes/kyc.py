@@ -1,4 +1,4 @@
-# routes/kyc.py
+# routes/kyc.py — KYC submission + admin review
 from fastapi import APIRouter, HTTPException, Depends
 from sqlmodel import Session, select
 from database import get_session
@@ -16,14 +16,18 @@ class KYCCreate(BaseModel):
     file_path: str
 
 
-@router.post("/", status_code=201)
+class KYCReview(BaseModel):
+    status: str  # 'approved' or 'rejected'
+
+
+@router.post("/submit", status_code=201)
 def submit_kyc(
     body: KYCCreate,
     user: dict = Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
-    if user["role"] not in ("bidder", "seller"):
-        raise HTTPException(status_code=403, detail="Only bidders and sellers submit KYC")
+    if user["role"] == "admin":
+        raise HTTPException(status_code=403, detail="Admins do not submit KYC")
 
     doc = KYCDocument(
         user_id=user["id"],
@@ -39,28 +43,37 @@ def submit_kyc(
     return {"kyc_id": doc.kyc_id}
 
 
-@router.post("/{kyc_id}/approve")
-def approve_kyc(
+@router.patch("/{kyc_id}/review")
+def review_kyc(
     kyc_id: int,
+    body: KYCReview,
     user: dict = Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
     if user["role"] != "admin":
-        raise HTTPException(status_code=403, detail="Only admins can approve KYC")
+        raise HTTPException(status_code=403, detail="Only admins can review KYC")
+
+    if body.status not in ("approved", "rejected"):
+        raise HTTPException(status_code=400, detail="status must be 'approved' or 'rejected'")
 
     doc = session.get(KYCDocument, kyc_id)
     if not doc:
         raise HTTPException(status_code=404, detail="KYC not found")
 
-    doc.status = "approved"
+    doc.status = body.status
     doc.reviewed_by = user["id"]
     doc.reviewed_at = datetime.now(timezone.utc)
     session.add(doc)
 
     target_user = session.get(User, doc.user_id)
     if target_user:
-        target_user.kyc_status = "approved"
+        target_user.kyc_status = body.status
         session.add(target_user)
 
     session.commit()
-    return {"approved": True}
+    return {
+        "kyc_id": doc.kyc_id,
+        "status": doc.status,
+        "reviewed_by": doc.reviewed_by,
+        "reviewed_at": doc.reviewed_at.isoformat() if doc.reviewed_at else None,
+    }
