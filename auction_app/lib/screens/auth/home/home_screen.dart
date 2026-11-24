@@ -1,9 +1,73 @@
 
 import 'package:flutter/material.dart';
-import '../../../core/theme/app_theme.dart';
 
-class HomeScreen extends StatelessWidget {
+import '../../../core/theme/app_theme.dart';
+import '../../../models/auction.dart';
+import '../../../services/auction_service.dart';
+import '../../../widgets/auction_card.dart';
+import '../../auctions/auction_detail_screen.dart';
+
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  final AuctionService _auctionService = AuctionService();
+
+  List<Auction> _auctions = [];
+
+  bool _isLoading = true;
+  String? _error;
+  String _selectedStatus = 'all';
+  String _searchQuery = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadAuctions();
+  }
+
+  Future<void> _loadAuctions() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    try {
+      final results = await _auctionService.getAuctions(
+        status: _selectedStatus,
+        search: _searchQuery,
+      );
+
+      if (!mounted) return;
+
+      setState(() {
+        _auctions = results;
+        _isLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+
+      setState(() {
+        _error = e.toString().replaceFirst('Exception: ', '');
+        _isLoading = false;
+      });
+    }
+  }
+
+  void _openAuction(Auction auction) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => AuctionDetailScreen(
+          auction: auction,
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -21,50 +85,48 @@ class HomeScreen extends StatelessWidget {
             onPressed: () {},
             icon: const Icon(Icons.notifications_outlined),
           ),
-          const SizedBox(width: 8),
         ],
       ),
 
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
+      body: RefreshIndicator(
+        onRefresh: _loadAuctions,
 
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: ListView(
+          padding: const EdgeInsets.all(20),
           children: [
+
             const Text(
-              'Welcome back',
+              'Discover',
               style: TextStyle(
-                fontSize: 16,
                 color: AppTheme.textGrey,
+                fontSize: 15,
               ),
             ),
 
-            const SizedBox(height: 6),
+            const SizedBox(height: 5),
 
             const Text(
-              'Discover Your Next Opportunity',
+              'Find Your Next Opportunity',
               style: TextStyle(
-                fontSize: 23,
+                fontSize: 24,
                 fontWeight: FontWeight.bold,
-                color: AppTheme.textDark,
+                color: AppTheme.navy,
               ),
             ),
 
-            const SizedBox(height: 24),
+            const SizedBox(height: 22),
 
-            // Featured auction banner
+            // FEATURED BANNER
             Container(
-              width: double.infinity,
               padding: const EdgeInsets.all(22),
               decoration: BoxDecoration(
                 color: AppTheme.navy,
                 borderRadius: BorderRadius.circular(18),
               ),
-
-              child: Column(
+              child: const Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     'PUBLIC ASSET AUCTIONS',
                     style: TextStyle(
                       color: AppTheme.gold,
@@ -72,149 +134,152 @@ class HomeScreen extends StatelessWidget {
                       letterSpacing: 1,
                     ),
                   ),
-
-                  const SizedBox(height: 14),
-
-                  const Text(
+                  SizedBox(height: 14),
+                  Text(
                     'Bid with confidence.\nOwn new opportunities.',
                     style: TextStyle(
                       color: Colors.white,
-                      fontSize: 24,
+                      fontSize: 23,
                       fontWeight: FontWeight.bold,
                     ),
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  ElevatedButton(
-                    onPressed: () {},
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.gold,
-                      foregroundColor: AppTheme.navy,
-                      minimumSize: const Size(150, 45),
-                    ),
-                    child: const Text('Explore Auctions'),
                   ),
                 ],
               ),
             ),
 
-            const SizedBox(height: 28),
+            const SizedBox(height: 25),
+
+            // SEARCH
+            TextField(
+              decoration: InputDecoration(
+                hintText: 'Search auctions...',
+                prefixIcon: const Icon(Icons.search),
+                suffixIcon: IconButton(
+                  icon: const Icon(Icons.clear),
+                  onPressed: () {
+                    _searchQuery = '';
+                    _loadAuctions();
+                  },
+                ),
+              ),
+              onSubmitted: (value) {
+                _searchQuery = value;
+                _loadAuctions();
+              },
+            ),
+
+            const SizedBox(height: 22),
 
             const Text(
-              'Explore Categories',
+              'Auction Listings',
               style: TextStyle(
-                fontSize: 19,
+                fontSize: 20,
                 fontWeight: FontWeight.bold,
-                color: AppTheme.textDark,
+                color: AppTheme.navy,
               ),
             ),
 
-            const SizedBox(height: 16),
+            const SizedBox(height: 14),
 
-            Row(
-              children: const [
-                Expanded(
-                  child: CategoryCard(
-                    icon: Icons.directions_car_outlined,
-                    title: 'Vehicles',
+            // STATUS FILTERS
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  _filterChip('All', 'all'),
+                  _filterChip('Live', 'live'),
+                  _filterChip('Upcoming', 'upcoming'),
+                  _filterChip('Sold', 'sold'),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
+            // LOADING STATE
+            if (_isLoading)
+              const Padding(
+                padding: EdgeInsets.all(35),
+                child: Center(
+                  child: CircularProgressIndicator(
+                    color: AppTheme.gold,
                   ),
                 ),
-                SizedBox(width: 12),
-                Expanded(
-                  child: CategoryCard(
-                    icon: Icons.landscape_outlined,
-                    title: 'Land',
+              )
+
+            // ERROR STATE
+            else if (_error != null)
+              Column(
+                children: [
+                  const Icon(
+                    Icons.cloud_off_outlined,
+                    size: 45,
+                    color: AppTheme.textGrey,
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    _error!,
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 12),
+                  ElevatedButton(
+                    onPressed: _loadAuctions,
+                    child: const Text('Try Again'),
+                  ),
+                ],
+              )
+
+            // EMPTY STATE
+            else if (_auctions.isEmpty)
+              const Padding(
+                padding: EdgeInsets.all(25),
+                child: Center(
+                  child: Text(
+                    'No auctions found.',
+                    style: TextStyle(
+                      color: AppTheme.textGrey,
+                    ),
                   ),
                 ),
-                SizedBox(width: 12),
-                Expanded(
-                  child: CategoryCard(
-                    icon: Icons.construction_outlined,
-                    title: 'Equipment',
+              )
+
+            // AUCTION LIST
+            else
+              ..._auctions.map(
+                (auction) => Padding(
+                  padding: const EdgeInsets.only(bottom: 14),
+                  child: AuctionCard(
+                    auction: auction,
+                    onTap: () => _openAuction(auction),
                   ),
                 ),
-              ],
-            ),
-
-            const SizedBox(height: 28),
-
-            const Text(
-              'Featured Auctions',
-              style: TextStyle(
-                fontSize: 19,
-                fontWeight: FontWeight.bold,
-                color: AppTheme.textDark,
               ),
-            ),
-
-            const SizedBox(height: 12),
-
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: const Text(
-                'Auction listings will appear here '
-                'when we connect your backend.',
-                style: TextStyle(
-                  color: AppTheme.textGrey,
-                ),
-              ),
-            ),
           ],
         ),
       ),
     );
   }
-}
 
-class CategoryCard extends StatelessWidget {
-  final IconData icon;
-  final String title;
+  Widget _filterChip(String label, String value) {
+    final selected = _selectedStatus == value;
 
-  const CategoryCard({
-    super.key,
-    required this.icon,
-    required this.title,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        vertical: 18,
-        horizontal: 6,
-      ),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: const Color(0xFFE8EBF0),
+    return Padding(
+      padding: const EdgeInsets.only(right: 9),
+      child: ChoiceChip(
+        label: Text(label),
+        selected: selected,
+        selectedColor: AppTheme.navy,
+        backgroundColor: Colors.white,
+        labelStyle: TextStyle(
+          color: selected ? Colors.white : AppTheme.navy,
+          fontWeight: FontWeight.w600,
         ),
-      ),
-
-      child: Column(
-        children: [
-          Icon(
-            icon,
-            color: AppTheme.navy,
-            size: 28,
-          ),
-
-          const SizedBox(height: 10),
-
-          Text(
-            title,
-            style: const TextStyle(
-              fontWeight: FontWeight.w600,
-              fontSize: 12,
-            ),
-          ),
-        ],
+        onSelected: (_) {
+          setState(() {
+            _selectedStatus = value;
+          });
+          _loadAuctions();
+        },
       ),
     );
   }

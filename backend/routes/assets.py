@@ -53,7 +53,15 @@ def list_assets(
     if status and status in ("upcoming", "live", "sold", "cancelled"):
         statement = statement.where(Asset.status == status)
     assets = session.exec(statement).all()
-    return [a.model_dump() for a in assets]
+    result = []
+    for asset in assets:
+        image = session.exec(
+            select(AssetImage).where(AssetImage.asset_id == asset.asset_id)
+        ).first()
+        data = asset.model_dump()
+        data["image_url"] = image.file_path if image else None
+        result.append(data)
+    return result
 
 
 @router.get("/{asset_id}")
