@@ -1,6 +1,6 @@
 
 import 'dart:convert';
-
+import '../models/auction_details.dart';
 import 'package:http/http.dart' as http;
 
 import '../core/constants/api_config.dart';
@@ -76,24 +76,43 @@ class AuctionService {
   }
 
   // FETCH INDIVIDUAL AUCTION
-  Future<Auction> getAuctionDetails(int assetId) async {
-    final headers = await _headers();
+  Future<AuctionDetails> getAuctionDetails(int assetId) async {
+  final token = await _authService.getToken();
 
-    final uri = Uri.parse(
-      '${ApiConfig.baseUrl}${ApiConfig.assets}$assetId',
-    );
-
-    final response = await http.get(
-      uri,
-      headers: headers,
-    );
-
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-
-      return Auction.fromDetailJson(data);
-    }
-
-    throw Exception('Unable to retrieve auction details.');
+  if (token == null || token.isEmpty) {
+    throw Exception('Please log in again.');
   }
+
+  final uri = Uri.parse(
+    '${ApiConfig.baseUrl}${ApiConfig.assets}$assetId',
+  );
+
+  final response = await http.get(
+    uri,
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $token',
+    },
+  );
+
+  if (response.statusCode == 200) {
+    final data = jsonDecode(response.body);
+
+    return AuctionDetails.fromJson(
+      Map<String, dynamic>.from(data),
+    );
+  }
+
+  if (response.statusCode == 401) {
+    throw Exception('Your session has expired. Please log in again.');
+  }
+
+  if (response.statusCode == 404) {
+    throw Exception('Auction not found.');
+  }
+
+  throw Exception(
+    'Could not load auction details: ${response.statusCode}',
+  );
+}
 }
