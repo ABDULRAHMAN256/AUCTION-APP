@@ -4,6 +4,7 @@ class Bid {
   final int userId;
   final double bidAmount;
   final DateTime placedAt;
+  final String? assetTitle;
 
   Bid({
     required this.bidId,
@@ -11,6 +12,7 @@ class Bid {
     required this.userId,
     required this.bidAmount,
     required this.placedAt,
+    this.assetTitle,
   });
 
   factory Bid.fromJson(Map<String, dynamic> json) {
@@ -20,6 +22,7 @@ class Bid {
       userId: json['user_id'] ?? 0,
       bidAmount: (json['bid_amount'] as num).toDouble(),
       placedAt: DateTime.parse(json['placed_at']),
+      assetTitle: json['asset_title'] as String?,
     );
   }
 }

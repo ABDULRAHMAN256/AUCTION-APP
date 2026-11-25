@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_theme.dart';
 import 'home_screen.dart';
+import '../../create/create_screen.dart';
+import '../../my_bids/my_bids_screen.dart';
 
 class AppShell extends StatefulWidget {
   const AppShell({super.key});
@@ -16,14 +18,8 @@ class _AppShellState extends State<AppShell> {
 
   final List<Widget> screens = [
     const HomeScreen(),
-    const PlaceholderScreen(
-      title: 'Explore Auctions',
-      icon: Icons.search,
-    ),
-    const PlaceholderScreen(
-      title: 'My Bids',
-      icon: Icons.gavel,
-    ),
+    const CreateScreen(),
+    const MyBidsScreen(),
     const PlaceholderScreen(
       title: 'My Profile',
       icon: Icons.person_outline,
@@ -57,8 +53,9 @@ class _AppShellState extends State<AppShell> {
             label: 'Home',
           ),
           NavigationDestination(
-            icon: Icon(Icons.search),
-            label: 'Explore',
+            icon: Icon(Icons.add_circle_outline),
+            selectedIcon: Icon(Icons.add_circle),
+            label: 'Create',
           ),
           NavigationDestination(
             icon: Icon(Icons.gavel_outlined),

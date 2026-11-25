@@ -79,8 +79,8 @@ def create_asset(
     user: dict = Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
-    if user["role"] not in ("seller", "admin"):
-        raise HTTPException(status_code=403, detail="Only sellers or admins can create assets")
+    # Any authenticated user can create a listing.
+    pass
 
     if body.reserve_price < body.starting_price:
         raise HTTPException(status_code=400, detail="reserve_price must be >= starting_price")
@@ -126,8 +126,8 @@ def update_asset(
     user: dict = Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
-    if user["role"] not in ("seller", "admin"):
-        raise HTTPException(status_code=403, detail="Only sellers or admins can update assets")
+    # Any authenticated user can update their own listing.
+    pass
 
     asset = session.get(Asset, asset_id)
     if not asset:
@@ -162,8 +162,8 @@ def delete_asset(
     user: dict = Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
-    if user["role"] not in ("seller", "admin"):
-        raise HTTPException(status_code=403, detail="Only sellers or admins can delete assets")
+    # Any authenticated user can delete their own listing.
+    pass
 
     asset = session.get(Asset, asset_id)
     if not asset:

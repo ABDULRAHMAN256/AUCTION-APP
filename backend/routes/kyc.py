@@ -22,8 +22,8 @@ def submit_kyc(
     user: dict = Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
-    if user["role"] not in ("bidder", "seller"):
-        raise HTTPException(status_code=403, detail="Only bidders and sellers submit KYC")
+    # Any authenticated user can submit KYC.
+    pass
 
     doc = KYCDocument(
         user_id=user["id"],

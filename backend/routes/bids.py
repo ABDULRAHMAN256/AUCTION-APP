@@ -25,7 +25,7 @@ def place_bid(body: BidCreate, user: dict = Depends(get_current_user)):
             raise HTTPException(status_code=409, detail="Auction is busy, retry")
         try:
             row = conn.execute(
-                text("SELECT current_price, status, end_time, min_increment FROM assets WHERE asset_id = :aid"),
+                text("SELECT current_price, status, end_time, min_increment, seller_id FROM assets WHERE asset_id = :aid"),
                 {"aid": body.asset_id}
             ).fetchone()
             if row is None:
@@ -35,6 +35,10 @@ def place_bid(body: BidCreate, user: dict = Depends(get_current_user)):
             status = row[1]
             end_time_str = row[2]
             min_increment = row[3]
+            seller_id = row[4]
+            if seller_id == user["id"]:
+                conn.execute(text("ROLLBACK"))
+                raise HTTPException(status_code=403, detail="You cannot bid on your own listing.")
             if status != "live":
                 conn.execute(text("ROLLBACK"))
                 raise HTTPException(status_code=409, detail=f"Asset is {status}, cannot bid")
@@ -82,4 +86,10 @@ def list_bids(asset_id: int, user: dict = Depends(get_current_user), session: Se
 @router.get("/users/me/bids")
 def my_bids(user: dict = Depends(get_current_user), session: Session = Depends(get_session)):
     bids = session.exec(select(Bid).where(Bid.user_id == user["id"]).order_by(Bid.bid_amount.desc())).all()
-    return [b.model_dump() for b in bids]
+    result = []
+    for bid in bids:
+        asset = session.get(Asset, bid.asset_id)
+        data = bid.model_dump()
+        data["asset_title"] = asset.title if asset else None
+        result.append(data)
+    return result

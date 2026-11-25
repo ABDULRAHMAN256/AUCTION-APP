@@ -90,7 +90,33 @@ class AuthService {
     await prefs.setString('auth_token', token);
   }
 
-  // RETRIEVE JWT TOKEN
+  // RETRIEVE CURRENT USER ID
+  Future<int?> getCurrentUserId() async {
+    final token = await getToken();
+
+    if (token == null || token.isEmpty) {
+      return null;
+    }
+
+    final parts = token.split('.');
+
+    if (parts.length != 3) {
+      return null;
+    }
+
+    try {
+      final normalized = base64Url.normalize(parts[1]);
+      final payload = jsonDecode(
+        utf8.decode(base64Url.decode(normalized)),
+      );
+
+      return int.tryParse(
+        payload['sub']?.toString() ?? '',
+      );
+    } catch (_) {
+      return null;
+    }
+  }
   Future<String?> getToken() async {
     final prefs = await SharedPreferences.getInstance();
 

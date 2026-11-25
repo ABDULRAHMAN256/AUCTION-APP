@@ -23,7 +23,7 @@ def register(body: RegisterRequest, session: Session = Depends(get_session)):
         password_hash=hash_password(body.password),
         full_name=body.full_name,
         phone=body.phone,
-        role="bidder",
+        role="user",
         kyc_status="pending",
         created_at=datetime.now(timezone.utc),
     )

@@ -14,7 +14,7 @@ class User(SQLModel, table=True):
     password_hash: str = Field(max_length=255)
     full_name: Optional[str] = Field(default=None, max_length=100)
     phone: Optional[str] = Field(default=None, max_length=20)
-    role: str = Field(default="bidder", max_length=10)
+    role: str = Field(default="user", max_length=10)
     kyc_status: str = Field(default="pending", max_length=10)
     created_at: datetime = Field(default_factory=datetime.utcnow)
 

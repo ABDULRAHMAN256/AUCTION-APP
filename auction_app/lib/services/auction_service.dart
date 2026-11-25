@@ -75,7 +75,79 @@ class AuctionService {
     throw Exception('Unable to retrieve auction listings.');
   }
 
-  // FETCH INDIVIDUAL AUCTION
+  // CREATE LISTING
+  Future<void> createAsset({
+    required String title,
+    required String description,
+    required String category,
+    required double startingPrice,
+    required double reservePrice,
+    required double minIncrement,
+    required DateTime startTime,
+    required DateTime endTime,
+    required List<String> images,
+  }) async {
+    final headers = await _headersForCreate();
+
+    final uri = Uri.parse(
+      '${ApiConfig.baseUrl}/api/assets/',
+    );
+
+    final response = await http.post(
+      uri,
+      headers: headers,
+      body: jsonEncode({
+        'category_id': _categoryId(category),
+        'title': title,
+        'description': description,
+        'starting_price': startingPrice,
+        'reserve_price': reservePrice,
+        'min_increment': minIncrement,
+        'start_time': startTime.toUtc().toIso8601String(),
+        'end_time': endTime.toUtc().toIso8601String(),
+        'images': images,
+      }),
+    );
+
+    if (response.statusCode == 201) {
+      return;
+    }
+
+    String message = 'Unable to create listing.';
+
+    try {
+      final data = jsonDecode(response.body);
+      message = data['detail']?.toString() ?? message;
+    } catch (_) {}
+
+    throw Exception(message);
+  }
+
+  Future<Map<String, String>> _headersForCreate() async {
+    final token = await _authService.getToken();
+
+    if (token == null || token.isEmpty) {
+      throw Exception('Please log in to create a listing.');
+    }
+
+    return {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $token',
+    };
+  }
+
+  int _categoryId(String category) {
+    switch (category) {
+      case 'Vehicles':
+        return 1;
+      case 'Land & Property':
+        return 2;
+      case 'Heavy Machinery':
+        return 3;
+      default:
+        return 3;
+    }
+  }
   Future<AuctionDetails> getAuctionDetails(int assetId) async {
   final token = await _authService.getToken();
 
