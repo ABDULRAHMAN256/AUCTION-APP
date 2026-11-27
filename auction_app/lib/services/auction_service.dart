@@ -148,6 +148,35 @@ class AuctionService {
         return 3;
     }
   }
+  Future<List<Auction>> getMyListings() async {
+    final headers = await _headersForCreate();
+
+    final uri = Uri.parse(
+      '${ApiConfig.baseUrl}/api/assets/mine',
+    );
+
+    final response = await http.get(
+      uri,
+      headers: headers,
+    );
+
+    if (response.statusCode == 200) {
+      final List<dynamic> data = jsonDecode(response.body);
+
+      return data.map((item) {
+        return Auction.fromJson(
+          item as Map<String, dynamic>,
+        );
+      }).toList();
+    }
+
+    if (response.statusCode == 401) {
+      throw Exception('Please log in to view your listings.');
+    }
+
+    throw Exception('Unable to retrieve your listings.');
+  }
+
   Future<AuctionDetails> getAuctionDetails(int assetId) async {
   final token = await _authService.getToken();
 

@@ -64,6 +64,26 @@ def list_assets(
     return result
 
 
+@router.get("/mine")
+def my_assets(
+    user: dict = Depends(get_current_user),
+    session: Session = Depends(get_session),
+):
+    assets = session.exec(
+        select(Asset).where(Asset.seller_id == user["id"])
+    ).all()
+
+    result = []
+    for asset in assets:
+        image = session.exec(
+            select(AssetImage).where(AssetImage.asset_id == asset.asset_id)
+        ).first()
+        data = asset.model_dump()
+        data["image_url"] = image.file_path if image else None
+        result.append(data)
+
+    return result
+
 @router.get("/{asset_id}")
 def get_asset(asset_id: int, user: dict = Depends(get_current_user), session: Session = Depends(get_session)):
     asset = session.get(Asset, asset_id)

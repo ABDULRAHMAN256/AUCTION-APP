@@ -4,6 +4,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../../core/theme/app_theme.dart';
 import '../../models/auction.dart';
 import '../../models/auction_details.dart';
 import '../../services/auction_service.dart';
@@ -325,10 +326,10 @@ class _AuctionDetailScreenState
       width: double.infinity,
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Colors.indigo.withValues(alpha: 0.08),
+        color: AppTheme.navy.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: Colors.indigo.withValues(alpha: 0.15),
+          color: AppTheme.navy.withValues(alpha: 0.15),
         ),
       ),
       child: Column(
@@ -339,7 +340,7 @@ class _AuctionDetailScreenState
               fontSize: 12,
               fontWeight: FontWeight.bold,
               letterSpacing: 1.5,
-              color: Colors.indigo,
+              color: AppTheme.navy,
             ),
           ),
           const SizedBox(height: 14),
@@ -371,7 +372,7 @@ class _AuctionDetailScreenState
               horizontal: 5,
             ),
             decoration: BoxDecoration(
-              color: Colors.indigo,
+              color: AppTheme.navy,
               borderRadius: BorderRadius.circular(10),
             ),
             child: Center(
@@ -567,7 +568,7 @@ class _AuctionDetailScreenState
                   ? FontWeight.bold
                   : FontWeight.w600,
               color: highlighted
-                  ? Colors.indigo
+                  ? AppTheme.navy
                   : null,
             ),
           ),
@@ -649,7 +650,7 @@ class _AuctionDetailScreenState
                     ? _placeBid
                     : null,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.indigo,
+                  backgroundColor: AppTheme.navy,
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
